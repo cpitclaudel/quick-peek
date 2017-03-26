@@ -3,7 +3,9 @@
 ;; Copyright (C) 2016  Clément Pit-Claudel
 
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
-;; Keywords: help convenience
+;; Keywords: tools help doc convenience
+;; Package-Requires: ((cl-lib "0.5") (emacs "24.3"))
+;; Version: 1.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
