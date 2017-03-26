@@ -20,7 +20,19 @@
 
 ;;; Commentary:
 
+;; A utility library to display inline pop-ups.  Looks roughly like this:
 ;;
+;;
+;; let _ = <|>le m n                           ← <|> marks the point
+;; ------------------------------------------- ← Pop-up begins here
+;;         le : ℕ → ℕ → ℙ
+;;         Inductive le (n : ℕ) : ℕ → ℙ ≜
+;;         | le_n : n ≤ n
+;;         | le_S : ∀ m : ℕ, n ≤ m → n ≤ S m
+;; ------------------------------------------- ← Pop-up ends here
+;;         && le n m                           ← Buffer text continues here
+;;
+;; See `quick-peek-show' and `quick-peek-hide' for usage instructions.
 
 ;;; Code:
 
@@ -147,8 +159,9 @@ between OFFSET and the end of the window, it will be moved left."
 
 (defun quick-peek--update (ov str min-h max-h)
   "Show STR in inline window OV at POS.
-MIN-H and MAX-H are bounds on the height of the window.
-If MAX-H is `none', don't restrict the window height."
+MIN-H and MAX-H are bounds on the height of the window.  If MAX-H
+is `none', let the inline window expand beyond the end of the
+selected Emacs window."
   (let* ((offset (quick-peek--text-width (quick-peek--point-at-bovl) (point)))
          (height (unless (eq max-h 'none)
                    (let ((visible-lines (quick-peek--count-visible-lines-under (point))))
@@ -163,8 +176,9 @@ If MAX-H is `none', don't restrict the window height."
 
 (defun quick-peek--show-at-point (str min-h max-h)
   "Show STR in inline window at POS.
-MIN-H and MAX-H are bounds on the height of the window.
-If MAX-H is `none', don't restrict the window height."
+MIN-H and MAX-H are bounds on the height of the window.  If MAX-H
+is `none', let the inline window expand beyond the end of the
+selected Emacs window."
   (let ((ov (quick-peek-overlay-at (point))))
     (unless ov
       (setq ov (make-overlay (point-at-eol) (1+ (point-at-eol))))
@@ -173,8 +187,9 @@ If MAX-H is `none', don't restrict the window height."
 
 (defun quick-peek-show (str &optional pos min-h max-h)
   "Show STR in an inline window at POS.
-MIN-H and MAX-H are bounds on the height of the window.
-If MAX-H is `none', don't restrict the window height."
+MIN-H (default: 4) and MAX-H (default: 16) are bounds on the
+height of the window.  Setting MAX-H to `none' allows the inline
+window to expand past the bottom of the current Emacs window."
   (save-excursion
     (goto-char (or pos (point)))
     (ignore (quick-peek--show-at-point str (or min-h 4) (or max-h 16)))))
@@ -186,9 +201,9 @@ If POS is nil, return t."
       (eq (overlay-start ov) (save-excursion (goto-char pos) (point-at-eol)))))
 
 (defun quick-peek-hide (&optional pos)
-  "Clear inline definition popups.
+  "Hide inline windows.
 With non-nil POS, clear only windows on line below pos.
-Return number of overlays removed."
+Return number of windows hidden."
   (interactive)
   (let ((kept nil)
         (nb-deleted 0))
