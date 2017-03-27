@@ -4,7 +4,7 @@
 
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
 ;; Keywords: tools help doc convenience
-;; Package-Requires: ((cl-lib "0.5") (emacs "24.3"))
+;; Package-Requires: ((emacs "24.3") (seq "2.16"))
 ;; Version: 1.0
 
 ;; This program is free software; you can redistribute it and/or modify
