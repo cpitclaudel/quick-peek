@@ -4,7 +4,7 @@
 
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
 ;; Keywords: tools help doc convenience
-;; Package-Requires: ((emacs "24.3") (seq "2.16"))
+;; Package-Requires: ((emacs "24.3"))
 ;; Version: 1.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,6 @@
 
 ;;; Code:
 
-(require 'seq)
 (require 'cl-lib)
 
 (defgroup quick-peek nil
@@ -174,7 +173,7 @@ selected Emacs window."
 
 (defun quick-peek-overlay-at (pos)
   "Find overlay for line at POS."
-  (car (seq-filter (lambda (ov) (quick-peek--overlay-matches-pos ov pos)) quick-peek--overlays)))
+  (car (cl-remove-if-not (lambda (ov) (quick-peek--overlay-matches-pos ov pos)) quick-peek--overlays)))
 
 (defun quick-peek--show-at-point (str min-h max-h)
   "Show STR in inline window at POS.
