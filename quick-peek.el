@@ -171,6 +171,7 @@ selected Emacs window."
     ;; FIXME add a newline to the overlay if it's at eob and in that case don't use (1+ ins-pos)
     (overlay-put ov 'after-string contents)))
 
+;;;###autoload
 (defun quick-peek-overlay-at (pos)
   "Find overlay for line at POS."
   (car (cl-remove-if-not (lambda (ov) (quick-peek--overlay-matches-pos ov pos)) quick-peek--overlays)))
@@ -186,6 +187,7 @@ selected Emacs window."
       (push ov quick-peek--overlays))
     (quick-peek--update ov str min-h max-h)))
 
+;;;###autoload
 (defun quick-peek-show (str &optional pos min-h max-h)
   "Show STR in an inline window at POS.
 MIN-H (default: 4) and MAX-H (default: 16) are bounds on the
@@ -201,6 +203,7 @@ If POS is nil, return t."
   (or (null pos)
       (eq (overlay-start ov) (save-excursion (goto-char pos) (point-at-eol)))))
 
+;;;###autoload
 (defun quick-peek-hide (&optional pos)
   "Hide inline windows.
 With non-nil POS, clear only windows on line below pos.
