@@ -44,6 +44,7 @@
   "Customization group for the `quick-peek' package."
   :group 'help
   :group 'tools
+  :prefix "quick-peek-"
   :tag "Quick peek windows")
 
 ;;; Variables
