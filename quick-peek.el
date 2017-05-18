@@ -38,19 +38,25 @@
 
 ;;; Code:
 
+
+;;; Customize
+
 (require 'cl-lib)
 
 (defgroup quick-peek nil
   "Customization group for the `quick-peek' package."
   :group 'help
   :group 'tools
+  :prefix "quick-peek-"
   :tag "Quick peek windows")
 
+
 ;;; Variables
 
 (defvar-local quick-peek--overlays nil
   "Overlays currently showing quick peek windows.")
 
+
 ;;; Faces
 
 (defface quick-peek-background-face
@@ -68,6 +74,7 @@
   "Face added to quick-peek window padding."
   :group 'quick-peek)
 
+
 ;;; Utilities
 
 (defun quick-peek--point-at-bovl ()
@@ -137,6 +144,28 @@ Line is surrounded by STR-BEFORE and STR-AFTER."
       (insert (propertize "\n" 'face `(:background ,color :inherit quick-peek-border-face))))
     (insert (propertize str-after 'face 'quick-peek-padding-face))))
 
+(defun quick-peek--append-face (start end face &optional object)
+  "Append FACE to text from START to END.
+
+Optional argument OBJECT is the string or buffer containing the text.
+
+If text has the `face' property, FACE is appended to faces.
+Otherwise, if text has the `font-lock-face' property, FACE is
+appended to font-lock faces."
+  (setq face (if (listp face) face (list face)))
+  (while (/= start end)
+    (let* ((next (min (next-single-property-change start 'face object end)
+                      (next-single-property-change start 'font-lock-face object end)))
+           (prop 'face)
+           (prev-face (get-text-property start 'face object)))
+      (unless prev-face
+        (when (setq prev-face (get-text-property start 'font-lock-face object))
+          (setq prop 'font-lock-face)))
+      (setq prev-face (if (listp prev-face) prev-face (list prev-face)))
+      (put-text-property start next prop (append prev-face face) object)
+      (setq start next))))
+
+
 ;;; Core
 
 (defun quick-peek--prepare-for-definition-overlay (str offset &optional max-lines)
@@ -153,7 +182,7 @@ between OFFSET and the end of the window, it will be moved left."
            (max-offset (- (window-body-width) text-width))
            (real-offset (max 0 (min offset max-offset))))
       (quick-peek--prefix-all-lines (make-string real-offset ?\s)))
-    (font-lock-append-text-property (point-min) (point-max) 'face 'quick-peek-background-face)
+    (quick-peek--append-face (point-min) (point-max) 'quick-peek-background-face)
     (quick-peek--insert-spacer (point-min) "\n" "\n")
     (quick-peek--insert-spacer (point-max) "\n" "\n")
     (buffer-string)))
@@ -219,5 +248,6 @@ Return number of windows hidden."
     (setq quick-peek--overlays kept)
     nb-deleted))
 
+
 (provide 'quick-peek)
 ;;; quick-peek.el ends here
