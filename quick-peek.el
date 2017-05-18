@@ -38,6 +38,9 @@
 
 ;;; Code:
 
+
+;;; Customize
+
 (require 'cl-lib)
 
 (defgroup quick-peek nil
@@ -47,11 +50,13 @@
   :prefix "quick-peek-"
   :tag "Quick peek windows")
 
+
 ;;; Variables
 
 (defvar-local quick-peek--overlays nil
   "Overlays currently showing quick peek windows.")
 
+
 ;;; Faces
 
 (defface quick-peek-background-face
@@ -69,6 +74,7 @@
   "Face added to quick-peek window padding."
   :group 'quick-peek)
 
+
 ;;; Utilities
 
 (defun quick-peek--point-at-bovl ()
@@ -138,6 +144,7 @@ Line is surrounded by STR-BEFORE and STR-AFTER."
       (insert (propertize "\n" 'face `(:background ,color :inherit quick-peek-border-face))))
     (insert (propertize str-after 'face 'quick-peek-padding-face))))
 
+
 ;;; Core
 
 (defun quick-peek--prepare-for-definition-overlay (str offset &optional max-lines)
@@ -220,5 +227,6 @@ Return number of windows hidden."
     (setq quick-peek--overlays kept)
     nb-deleted))
 
+
 (provide 'quick-peek)
 ;;; quick-peek.el ends here
