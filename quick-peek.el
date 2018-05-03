@@ -46,6 +46,16 @@
   :group 'tools
   :tag "Quick peek windows")
 
+(defcustom quick-peek-overlay-position :down
+  "Set quick-peek overlay position."
+  :type 'constant
+  :safe #'keywordp
+  :group 'quick-peek
+  :type '(choice (constant :tag "display overlay upside"
+                           :above)
+                 (constant :tag "display overlay downside"
+                           :down)))
+
 ;;; Variables
 
 (defvar-local quick-peek--overlays nil
@@ -183,7 +193,13 @@ is `none', let the inline window expand beyond the end of the
 selected Emacs window."
   (let ((ov (quick-peek-overlay-at (point))))
     (unless ov
-      (setq ov (make-overlay (point-at-eol) (1+ (point-at-eol))))
+      (setq ov
+            (pcase quick-peek-overlay-position
+              (:above
+               (make-overlay (point-at-eol 0) (1+ (point-at-eol 0))))
+              (:down
+               (make-overlay (point-at-eol) (1+ (point-at-eol))))
+              ))
       (push ov quick-peek--overlays))
     (quick-peek--update ov str min-h max-h)))
 
