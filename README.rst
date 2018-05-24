@@ -9,7 +9,9 @@ An inline pop-up library for Emacs Lisp.
 API
 ===
 
-See docstrings of ``quick-peek-show`` and ``quick-peek-hide``.
+See the docstrings of ``quick-peek-show`` and ``quick-peek-hide``.
+
+Complex programs may need to use the lower-level ``quick-peek-overlay-ensure-at``, ``quick-peek-overlay-contents``, and ``quick-peek-overlay-update`` methods.
 
 Customization
 =============
