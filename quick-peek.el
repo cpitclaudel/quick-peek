@@ -1,6 +1,6 @@
 ;;; quick-peek.el --- Inline quick-peek windows      -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016  Clément Pit-Claudel
+;; Copyright (C) 2016, 2018  Clément Pit-Claudel
 
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
 ;; Keywords: tools help doc convenience
@@ -145,7 +145,7 @@ Line is surrounded by STR-BEFORE and STR-AFTER."
 
 ;;; Core
 
-(defun quick-peek--prepare-for-definition-overlay (str offset &optional max-lines)
+(defun quick-peek--prepare-overlay-string (str offset &optional max-lines)
   "Prepare STR for display in a quick peek window.
 Return value is a string that includes properties surrounding it
 with two thin horizontal lines, indented by OFFSET, and truncated
@@ -165,38 +165,85 @@ between OFFSET and the end of the window, it will be moved left."
     (quick-peek--insert-spacer (point-max) "\n" "\n")
     (buffer-string)))
 
-(defun quick-peek--update (ov str min-h max-h)
-  "Show STR in inline window OV at POS.
+(defun quick-peek-overlay-contents (ov)
+  "Return the raw string contents of quick-peek overlay OV.
+
+Use `(setf (quick-peek-overlay-contents ov) str)' to change an
+overlay's contents.  Setting an overlay's contents doesn't
+automatically update it; you must call `quick-peek-update' for
+that.
+
+Most programs should not need to set this property directly, as
+it is only useful if you intend to build quick-peek windows
+piecemeal (most programs should call `quick-peek-show' directly
+instead)."
+  (overlay-get ov 'quick-peek--contents))
+
+(gv-define-setter quick-peek-overlay-contents (str ov)
+  `(overlay-put ,ov 'quick-peek--contents ,str))
+
+(defun quick-peek--compute-height (_ov min-h max-h)
+  "Compute an appropriate height for OV on the current line.
+
+MIN-H and MAX-H are bounds on the height.  If MAX-H is `none',
+let the inline window expand beyond the end of the selected Emacs
+window."
+  (unless (eq max-h 'none) ;; FIXME this should check `quick-peek-position'
+    (let ((visible-lines (quick-peek--count-visible-lines-under (point))))
+      (max min-h (min max-h (- visible-lines 2))))))
+
+(defun quick-peek-update (ov &optional min-h max-h)
+  "Redraw quick-peek overlay OV.
+
 MIN-H and MAX-H are bounds on the height of the window.  If MAX-H
 is `none', let the inline window expand beyond the end of the
-selected Emacs window."
-  (let* ((offset (quick-peek--text-width (quick-peek--point-at-bovl) (point)))
-         (height (unless (eq max-h 'none)
-                   (let ((visible-lines (quick-peek--count-visible-lines-under (point))))
-                     (max min-h (min max-h (- visible-lines 2))))))
-         (contents (quick-peek--prepare-for-definition-overlay str offset height)))
-    ;; FIXME add a newline to the overlay if it's at eob and in that case don't use (1+ ins-pos)
-    (overlay-put ov 'after-string contents)))
+selected Emacs window.
+
+Calling this method is only useful after directly setting the
+contents of a quick-peek overlay.  Most programs should not need
+to do so (call `quick-peek-show' directly instead)."
+  (save-excursion
+    (goto-char (overlay-start ov))
+    (setq min-h (or min-h 4) max-h (or max-h 16))
+    (let* ((contents (quick-peek-overlay-contents ov))
+           (offset (quick-peek--text-width (quick-peek--point-at-bovl) (point)))
+           (height (quick-peek--compute-height ov min-h max-h))
+           (str (quick-peek--prepare-overlay-string contents offset height))
+           (prop (pcase quick-peek-position
+                   (`above 'before-string)
+                   (_ 'after-string))))
+      (overlay-put ov prop str))))
+
+(defun quick-peek-overlay-p (ov)
+  "Check if OV is a quick-peek overlay."
+  (overlay-get ov 'quick-peek))
 
 ;;;###autoload
 (defun quick-peek-overlay-at (pos)
   "Find overlay for line at POS."
   (car (cl-remove-if-not (lambda (ov) (quick-peek--overlay-matches-pos ov pos)) quick-peek--overlays)))
 
-(defun quick-peek--show-at-point (str min-h max-h)
+(defun quick-peek-overlay-ensure-at (pos)
+  "Find or create a quick-peek overlay for the line at POS.
+
+Typical code should not need this method; use `quick-peek-show'
+instead."
+  (or (quick-peek-overlay-at pos)
+      (let* ((ov (save-excursion
+                   (goto-char pos)
+                   (make-overlay (point-at-bol) (1+ (point-at-eol))))))
+        (overlay-put ov 'quick-peek t)
+        (push ov quick-peek--overlays)
+        ov)))
+
+(defun quick-peek--show-at (pos str &optional min-h max-h)
   "Show STR in inline window at POS.
 MIN-H and MAX-H are bounds on the height of the window.  If MAX-H
 is `none', let the inline window expand beyond the end of the
 selected Emacs window."
-  (let ((ov (quick-peek-overlay-at (point))))
-    (unless ov
-      (setq ov
-            (let ((overlay-anchor (pcase quick-peek-position
-                                    (`above (1- (point-at-bol)))
-                                    (`below (point-at-eol)))))
-              (make-overlay overlay-anchor (1+ overlay-anchor))))
-      (push ov quick-peek--overlays))
-    (quick-peek--update ov str min-h max-h)))
+  (let ((ov (quick-peek-overlay-ensure-at pos)))
+    (setf (quick-peek-overlay-contents ov) str)
+    (quick-peek-update ov min-h max-h)))
 
 ;;;###autoload
 (defun quick-peek-show (str &optional pos min-h max-h)
@@ -204,26 +251,24 @@ selected Emacs window."
 MIN-H (default: 4) and MAX-H (default: 16) are bounds on the
 height of the window.  Setting MAX-H to `none' allows the inline
 window to expand past the bottom of the current Emacs window."
-  (save-excursion
-    (goto-char (or pos (point)))
-    (ignore (quick-peek--show-at-point str (or min-h 4) (or max-h 16)))))
+  (ignore (quick-peek--show-at (or pos (point)) str min-h max-h)))
 
 (defun quick-peek--overlay-matches-pos (ov pos)
-  "Check if OV is on line after POS.
-If POS is nil, return t."
-  (or (null pos)
-      (eq (overlay-start ov) (save-excursion (goto-char pos) (point-at-eol)))))
+  "Check if OV is a quick-peek overlay covering POS."
+  (and (quick-peek-overlay-p ov)
+       (<= (overlay-start ov) pos)
+       (< pos (overlay-end ov))))
 
 ;;;###autoload
 (defun quick-peek-hide (&optional pos)
   "Hide inline windows.
-With non-nil POS, clear only windows on line below pos.
-Return number of windows hidden."
+With non-nil POS, clear only overlays on line of POS.
+Return the number of overlays hidden."
   (interactive)
   (let ((kept nil)
         (nb-deleted 0))
     (dolist (ov quick-peek--overlays)
-      (if (quick-peek--overlay-matches-pos ov pos)
+      (if (or (null pos) (quick-peek--overlay-matches-pos ov pos))
           (progn (delete-overlay ov)
                  (cl-incf nb-deleted))
         (push ov kept)))
