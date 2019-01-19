@@ -52,6 +52,11 @@
   :type '(choice (const :tag "Above the current line" above)
                  (const :tag "Below the current line" below)))
 
+(defcustom quick-peek-add-spacer t
+  "If non-nil, display spacer above and below quick-peek contents."
+  :group 'quick-peek
+  :type 'boolean)
+
 ;;; Variables
 
 (defvar-local quick-peek--overlays nil
@@ -161,8 +166,9 @@ between OFFSET and the end of the window, it will be moved left."
       (quick-peek--prefix-all-lines (make-string real-offset ?\s)))
     (let ((char-property-alias-alist '((face font-lock-face))))
       (font-lock-append-text-property (point-min) (point-max) 'face 'quick-peek-background-face))
-    (quick-peek--insert-spacer (point-min) "\n" "\n")
-    (quick-peek--insert-spacer (point-max) "\n" "\n")
+    (when quick-peek-spacer
+      (quick-peek--insert-spacer (point-min) "\n" "\n")
+      (quick-peek--insert-spacer (point-max) "\n" "\n"))
     (buffer-string)))
 
 (defun quick-peek-overlay-contents (ov)
