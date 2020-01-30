@@ -65,17 +65,17 @@
 ;;; Faces
 
 (defface quick-peek-background-face
-  '((t :inherit default))
+  '((t :inherit default :extend t))
   "Face added to all text in quick-peek windows."
   :group 'quick-peek)
 
 (defface quick-peek-border-face
-  '((t :height 1))
+  '((t :height 1 :extend t))
   "Face added to quick-peek window borders."
   :group 'quick-peek)
 
 (defface quick-peek-padding-face
-  '((t :height 0.15))
+  '((t :height 0.15 :extend t))
   "Face added to quick-peek window padding."
   :group 'quick-peek)
 
