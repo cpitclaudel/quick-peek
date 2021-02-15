@@ -209,7 +209,7 @@ Calling this method is only useful after directly setting the
 contents of a quick-peek overlay.  Most programs should not need
 to do so (call `quick-peek-show' directly instead)."
   (save-excursion
-    (goto-char (overlay-start ov))
+    (goto-char (overlay-get ov 'quick-peek-pos))
     (setq min-h (or min-h 4) max-h (or max-h 16))
     (let* ((contents (quick-peek-overlay-contents ov))
            (offset (quick-peek--text-width (quick-peek--point-at-bovl) (point)))
@@ -239,6 +239,7 @@ instead."
                    (goto-char pos)
                    (make-overlay (point-at-bol) (1+ (point-at-eol))))))
         (overlay-put ov 'quick-peek t)
+        (overlay-put ov 'quick-peek-pos pos)
         (push ov quick-peek--overlays)
         ov)))
 
@@ -254,10 +255,12 @@ selected Emacs window."
 ;;;###autoload
 (defun quick-peek-show (str &optional pos min-h max-h)
   "Show STR in an inline window at POS.
-MIN-H (default: 4) and MAX-H (default: 16) are bounds on the
-height of the window.  Setting MAX-H to `none' allows the inline
-window to expand past the bottom of the current Emacs window."
-  (ignore (quick-peek--show-at (or pos (point)) str min-h max-h)))
+POS (default: `point-at-bol') is the position in whichs column
+the STR should be shown. MIN-H (default: 4) and MAX-H (default:
+16) are bounds on the height of the window. Setting MAX-H to
+`none' allows the inline window to expand past the bottom of the
+current Emacs window."
+  (ignore (quick-peek--show-at (or pos (point-at-bol)) str min-h max-h)))
 
 (defun quick-peek--overlay-matches-pos (ov pos)
   "Check if OV is a quick-peek overlay covering POS."
